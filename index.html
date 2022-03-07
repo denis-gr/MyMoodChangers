@@ -53,33 +53,26 @@
         <nav class="navbar navbar-dark mb-4" style="border-bottom: 1px solid var(--bs-white);">
             <div class="container">
                 <span class="navbar-brand me-0">MyMoodChangers</span>
-                <!--a class="btn btn-text me-auto"><i class="bi bi-gear-fill text-white" @click="screen = 'settings'"></i></a-->
+                <a class="btn me-auto"><i class="bi bi-gear-fill text-white" @click="screen = 'settings'"></i></a>
             </div>
         </nav>
         <div class="container mx-auto bg-white p-4" style="display: inline-block; border-radius: 10px;"
             v-if="screen == 'settings'">
             <div class="mb-3">
-                <label class="mb-3 w-100 form-check form-switch">
-                    <input class="form-check-input" type="checkbox" v-model="recognition_mode">
-                    <span class="form-label">Иной порядок распознания речи</span>
-                </label>
-            </div>
-            <div class="mb-3">
+                <a class="btn btn-link me-auto p-0 text-black" @click="screen = 'main'">Вернуться</a>
                 <label class="mb-3 w-100">
-                    <span class="form-label">Список слов (Word)</span>
-                    <textarea class="form-control" rows="3" v-model.lazy="allWordsText"></textarea>
+                    <span class="form-label">Данные в формате JSON</span>
+                    <textarea class="form-control" rows="3" v-model.lazy="allDataJSON"></textarea>
                 </label>
             </div>
         </div>
         <div class="container mx-auto bg-white p-4" style="display: inline-block; border-radius: 10px;"
             v-if="screen == 'main'">
             <div class="settings d-flex">
-                <!--select class="form-select me-3" aria-label="Default select example">
-                    <option selected>Open this select menu</option>
-                    <option value="1">One</option>
-                    <option value="2">Two</option>
-                    <option value="3">Three</option>
-                </select-->
+                <select class="form-select me-3" v-model="currentType">
+                    <option selected :value="null">Все</option>
+                    <option :value="i" v-text="i" v-for="i in typesList">
+                </select>
                 <button class="btn btn-primary bi bi-plus" @click="openForm()"></button>
             </div>
            <div class="list-previews">
@@ -117,7 +110,7 @@
     </style>
     <script>
         const app = Vue.createApp({
-            data: () => ({ screen: "main", eventsAll: [], current: null, currentObject: {} }),
+            data: () => ({ screen: "main", eventsAll: [], current: null, currentType: null, currentObject: {} }),
             methods: {
                 clearForm() {
                     this.currentObject = ({
@@ -154,20 +147,18 @@
                     this.$refs.closeModal.click();                    
                 },
                 save() {
-                    localStorage["eventsAll"] = JSON.stringify(this.eventsAll);
+                    localStorage["eventsAll"] = this.allDataJSON;
                 },
             },
             created() {
-                this.eventsAll = JSON.parse(localStorage["eventsAll"] || "[]");
-                this.eventsAll = this.eventsAll.map(i => ({...i, datetime: new Date(i.datetime)}));
+                this.allDataJSON = localStorage["eventsAll"];
             },
             computed: {
                 eventsList() {
                     let temp = {};
-                    this.eventsAll.forEach(i => {
+                    this.eventsAll.filter(i => !this.currentType || this.currentType == i.type).forEach(i => {
                         const index = i.datetime.toJSON().slice(0, 10);
-                        temp[index] = temp[index] || [];
-                        temp[index].push(i);
+                        temp[index] = temp[index] ? [i, ...temp[index]] : [i];
                         temp[index].sort((a, b) => b.datetime - a.datetime);
                     });
                     temp = Object.entries(temp);
@@ -176,6 +167,13 @@
                 },
                 typesList() {
                     return new Set(this.eventsAll.map(i => i.type));
+                },
+                allDataJSON: {
+                    get() { return JSON.stringify(this.eventsAll) },
+                    set(val) {
+                        this.eventsAll = JSON.parse(val || "[]")
+                            .map(i => ({...i, datetime: new Date(i.datetime)}));
+                    },
                 },
             },
         }).mount('#app');
