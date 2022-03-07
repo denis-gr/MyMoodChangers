@@ -29,7 +29,10 @@
                     </div>
                     <label class="mb-3 w-100">
                         <span class="form-label">Тип</span>
-                        <input class="form-control w-100" v-model="currentObject.type">
+                        <input class="form-control w-100" v-model="currentObject.type"  list="typesListDataList">
+                        <datalist id="typesListDataList">
+                            <option :value="i" v-for="i in typesList">
+                        </datalist>
                       </label>
                       <label class="mb-3 w-100">
                           <span class="form-label">Причина</span>
@@ -170,6 +173,9 @@
                     temp = Object.entries(temp);
                     temp.sort((a, b) => b[0].localeCompare(a[0]));
                     return temp;
+                },
+                typesList() {
+                    return new Set(this.eventsAll.map(i => i.type));
                 },
             },
         }).mount('#app');
